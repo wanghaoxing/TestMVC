@@ -1,0 +1,98 @@
+﻿@using Web.Core.Extension;
+@using PagedList.Mvc;
+@model PagedList.StaticPagedList<Ruanmou.EF.Model.Commodity>
+@{
+    ViewBag.Title = "CommodityManage";
+}
+
+<p>
+    @Html.ActionLink("Create New","Create")
+    <a href="/Third/Create">Create New</a>
+</p>
+@using (Html.BeginForm())
+{
+    <p>
+        Find by Title:@Html.TextBox("searchString", ViewBag.SearchString as string, new { @class = "form-control", @Style = "display:inline" })
+        @Html.Submit("查询")
+    </p>
+    <div id="partialajaxList">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>标题</th>
+                <th>@Html.ActionLink("价格","Index",new {orderBy=ViewBag.OrderBy,searchString=ViewBag.SearchString,page=1 })</th>
+                <th>Url</th>
+                <th>Action</th>
+                <th>图片</th>
+            </tr>
+            @foreach(var item in Model)
+            {<tr>
+                <td>
+                    @item.Id
+                </td>
+                <td>
+                    @item.Title
+                </td>
+                <td>
+                    @item.Price
+                </td>
+                 <td>
+                     @item.Url
+                 </td>
+                <td>
+                   <a href="/Third/Details/@item.Id">Details</a> |
+                    @Html.ActionLink("Edit", "Edit", new { id=item.Id})|
+                    @Html.ActionLink("Edit", "Edit", new { id = item.Id })|
+                    <a href="javascript:void(0)" id="@item.Id" onclick="ajaxDelete(this)">ajaxDelete</a>
+                </td>
+                <td>
+                    @item.ImageUrl
+                </td>
+            </tr>
+            }
+        </table>
+        @Html.Br()
+        Page@(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+        @Html.PagedListPager(Model, pageIndex => Url.Action("Index", new { pageIndex, lastOrderBy = ViewBag.OrderBy, searchString = ViewBag.SearchString }))
+    </div>
+}
+@section scripts{
+    <script type="text/javascript">
+                $(document).ready(function () {
+            //1 页面生成html时候，已经全部替换成数据 razor语法
+            //2 空页面，ajax请求数据，前端绑定    需要2次请求
+            //3 生成html用js变量保存数据，然后js前端绑定
+            var listData = '@ViewBag.ListData';//单引号的bug需要在后端转码
+
+
+        })
+                function ajaxDelete(obj) {
+                    $.ajax({
+                        type="post",
+                        url: '/Third/AjaxDelete',
+                        data: { id: obj.id },
+                        success: function (data) {
+                            if (data.Result == 1) {
+                                alert("删除成功" + obj.id + "需要手动刷新缓存")
+                            }
+                            else if (data.Result == 2) {
+                                alert("登陆超时,请重新登陆");
+                                location.href = "/home/login";
+                            }
+                            else if (data.Result == 3) {
+                                alert("无权操作");
+                                location.href = "/home/login";
+                            }
+                            else {
+                                alert(data.PromptMsg);
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            alert(errorThrown);
+                        }
+
+                    });
+                }
+    </script>
+    }
+
